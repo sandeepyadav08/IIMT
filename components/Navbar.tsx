@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaYoutube } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaYoutube, FaCaretDown, FaCaretUp } from 'react-icons/fa';
+import { CiCirclePlus, CiCircleMinus } from 'react-icons/ci';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -112,6 +113,9 @@ export default function Navbar() {
                     }}
                   >
                     About
+                    <span className={`dropdown-arrow ${activeSubmenu === 'about' ? 'open' : ''}`}>
+                      {activeSubmenu === 'about' ? <FaCaretDown /> : <FaCaretUp />}
+                    </span>
                   </a>
                   {activeSubmenu === 'about' && (
                     <div className="submenu-content mobile-submenu">
@@ -123,8 +127,10 @@ export default function Navbar() {
                               e.preventDefault();
                               setActiveNestedSubmenu(activeNestedSubmenu === 'genesis' ? null : 'genesis');
                             }}
+                            className="nested-toggle"
                           >
                             Genesis
+                            {activeNestedSubmenu === 'genesis' ? <CiCircleMinus /> : <CiCirclePlus />}
                           </a>
                           {activeNestedSubmenu === 'genesis' && (
                             <ul className="nested-submenu-list mobile-nested">
@@ -193,6 +199,9 @@ export default function Navbar() {
                     }}
                   >
                     Programmes
+                    <span className={`dropdown-arrow ${activeSubmenu === 'programmes' ? 'open' : ''}`}>
+                      {activeSubmenu === 'programmes' ? <FaCaretDown /> : <FaCaretUp />}
+                    </span>
                   </a>
                   {activeSubmenu === 'programmes' && (
                     <div className="submenu-content mobile-submenu">
@@ -239,6 +248,9 @@ export default function Navbar() {
                     }}
                   >
                     People
+                    <span className={`dropdown-arrow ${activeSubmenu === 'people' ? 'open' : ''}`}>
+                      {activeSubmenu === 'people' ? <FaCaretDown /> : <FaCaretUp />}
+                    </span>
                   </a>
                   {activeSubmenu === 'people' && (
                     <div className="submenu-content mobile-submenu">
@@ -295,6 +307,9 @@ export default function Navbar() {
                     }}
                   >
                     Journal
+                    <span className={`dropdown-arrow ${activeSubmenu === 'journal' ? 'open' : ''}`}>
+                      {activeSubmenu === 'journal' ? <FaCaretDown /> : <FaCaretUp />}
+                    </span>
                   </a>
                   {activeSubmenu === 'journal' && (
                     <div className="submenu-content mobile-submenu">
@@ -321,6 +336,9 @@ export default function Navbar() {
                     }}
                   >
                     Research
+                    <span className={`dropdown-arrow ${activeSubmenu === 'research' ? 'open' : ''}`}>
+                      {activeSubmenu === 'research' ? <FaCaretDown /> : <FaCaretUp />}
+                    </span>
                   </a>
                   {activeSubmenu === 'research' && (
                     <div className="submenu-content mobile-submenu">
@@ -367,6 +385,9 @@ export default function Navbar() {
                     }}
                   >
                     Placements
+                    <span className={`dropdown-arrow ${activeSubmenu === 'placements' ? 'open' : ''}`}>
+                      {activeSubmenu === 'placements' ? <FaCaretDown /> : <FaCaretUp />}
+                    </span>
                   </a>
                   {activeSubmenu === 'placements' && (
                     <div className="submenu-content mobile-submenu">
@@ -413,6 +434,9 @@ export default function Navbar() {
                     }}
                   >
                     Media Relations
+                    <span className={`dropdown-arrow ${activeSubmenu === 'media-relations' ? 'open' : ''}`}>
+                      {activeSubmenu === 'media-relations' ? <FaCaretDown /> : <FaCaretUp />}
+                    </span>
                   </a>
                   {activeSubmenu === 'media-relations' && (
                     <div className="submenu-content mobile-submenu">
@@ -459,6 +483,9 @@ export default function Navbar() {
                     }}
                   >
                     Executive Education & Consulting
+                    <span className={`dropdown-arrow ${activeSubmenu === 'executive-education' ? 'open' : ''}`}>
+                      {activeSubmenu === 'executive-education' ? <FaCaretDown /> : <FaCaretUp />}
+                    </span>
                   </a>
                   {activeSubmenu === 'executive-education' && (
                     <div className="submenu-content mobile-submenu">
@@ -490,6 +517,9 @@ export default function Navbar() {
                     }}
                   >
                     Campus
+                    <span className={`dropdown-arrow ${activeSubmenu === 'campus' ? 'open' : ''}`}>
+                      {activeSubmenu === 'campus' ? <FaCaretDown /> : <FaCaretUp />}
+                    </span>
                   </a>
                   {activeSubmenu === 'campus' && (
                     <div className="submenu-content mobile-submenu">
@@ -546,6 +576,9 @@ export default function Navbar() {
                     }}
                   >
                     International Relations
+                    <span className={`dropdown-arrow ${activeSubmenu === 'international-relations' ? 'open' : ''}`}>
+                      {activeSubmenu === 'international-relations' ? <FaCaretDown /> : <FaCaretUp />}
+                    </span>
                   </a>
                   {activeSubmenu === 'international-relations' && (
                     <div className="submenu-content mobile-submenu">
@@ -635,7 +668,10 @@ export default function Navbar() {
                       onMouseEnter={() => setActiveNestedSubmenu('genesis')}
                       onMouseLeave={() => setActiveNestedSubmenu(null)}
                     >
-                      <a href="#genesis">Genesis ›</a>
+                      <a href="#genesis" className="nested-toggle">
+                        Genesis
+                        {activeNestedSubmenu === 'genesis' ? <CiCircleMinus /> : <CiCirclePlus />}
+                      </a>
                       {activeNestedSubmenu === 'genesis' && (
                         <div className="nested-submenu">
                           <ul className="nested-submenu-list">
