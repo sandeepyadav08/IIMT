@@ -48,6 +48,7 @@ export default function Navbar() {
 
   const handleSubmenuClick = (menuName: string) => {
     setActiveSubmenu(activeSubmenu === menuName ? null : menuName);
+    setActiveNestedSubmenu(null);
   };
 
   const handleNestedSubmenuHover = (submenuName: string | null) => {
@@ -169,9 +170,7 @@ export default function Navbar() {
                             onClick={(e) => {
                               e.preventDefault();
                               setActiveNestedSubmenu(
-                                activeNestedSubmenu === "genesis"
-                                  ? null
-                                  : "genesis"
+                                activeNestedSubmenu === "genesis" ? null : "genesis"
                               );
                             }}
                             className="nested-toggle"

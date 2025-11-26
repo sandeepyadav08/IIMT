@@ -693,6 +693,10 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.submenu-list li:last-child {
+  border-bottom: none;
+}
+
 .submenu-list a {
   display: block;
   padding: 10px 20px;
