@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   FaFacebook,
   FaTwitter,
@@ -10,7 +11,36 @@ import {
   FaCaretDown,
   FaCaretUp,
 } from "react-icons/fa";
+import { MdOutlineArrowRight, MdOutlineArrowLeft } from "react-icons/md";
 import { CiCirclePlus, CiCircleMinus } from "react-icons/ci";
+
+interface MenuItem {
+  id: number;
+  order: number;
+  parent: number;
+  title: string;
+  url: string;
+  attr: string;
+  target: string;
+  classes: string;
+  xfn: string;
+  description: string;
+  object_id: number;
+  object: string;
+  object_slug: string;
+  type: string;
+  type_label: string;
+  children?: MenuItem[];
+}
+
+interface MenuData {
+  ID: number;
+  name: string;
+  slug: string;
+  description: string;
+  count: number;
+  items: MenuItem[];
+}
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,6 +49,48 @@ export default function Navbar() {
   const [activeNestedSubmenu, setActiveNestedSubmenu] = useState<string | null>(
     null
   );
+  const [menuData, setMenuData] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Convert WordPress URL to Next.js internal link
+  const convertToNextLink = (url: string, objectSlug: string): string => {
+    // If it's a WordPress page URL, convert to /pages/[slug]
+    if (url.includes('/wordpress/') || url.includes('192.168.29.241')) {
+      return `/pages/${objectSlug}`;
+    }
+    // Return original URL for external links
+    return url;
+  };
+
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const response = await fetch(
+          "http://192.168.29.241/wordpress/wp-json/wp-api-menus/v2/menus/15"
+        );
+        const data: MenuData = await response.json();
+        setMenuData(data.items || []);
+      } catch (error) {
+        console.error("Error fetching menu:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenu();
+  }, []);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const toggleMenu = () => {
     if (isOpen) {
@@ -134,659 +206,122 @@ export default function Navbar() {
 
               {/* Menu Items */}
               <ul className="menu-list">
-                <li
-                  className={`has-submenu ${
-                    activeSubmenu === "about" ? "active" : ""
-                  }`}
-                  onMouseEnter={() => handleSubmenuHover("about")}
-                  id="about-menu-item"
-                >
-                  <a
-                    href="#about"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSubmenuClick("about");
-                    }}
-                  >
-                    About
-                    <span
-                      className={`dropdown-arrow ${
-                        activeSubmenu === "about" ? "open" : ""
+                {loading ? (
+                  <li>Loading menu...</li>
+                ) : (
+                  menuData.map((item) => (
+                    <li
+                      key={item.id}
+                      className={`has-submenu ${
+                        activeSubmenu === item.object_slug ? "active" : ""
                       }`}
+                      onMouseEnter={() => handleSubmenuHover(item.object_slug)}
                     >
-                      {activeSubmenu === "about" ? (
-                        <FaCaretUp />
-                      ) : (
-                        <FaCaretDown />
-                      )}
-                    </span>
-                  </a>
-                  {activeSubmenu === "about" && (
-                    <div className="submenu-content mobile-submenu">
-                      <ul className="submenu-list">
-                        <li className="has-nested-submenu">
-                          <a
-                            href="#genesis"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setActiveNestedSubmenu(
-                                activeNestedSubmenu === "genesis" ? null : "genesis"
-                              );
-                            }}
-                            className="nested-toggle"
+                      {item.children && item.children.length > 0 ? (
+                        <a
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleSubmenuClick(item.object_slug);
+                          }}
+                        >
+                          {item.title}
+                          <span
+                            className={`dropdown-arrow ${
+                              activeSubmenu === item.object_slug ? "open" : ""
+                            }`}
                           >
-                            Genesis
-                            {activeNestedSubmenu === "genesis" ? (
-                              <CiCircleMinus />
+                            {isMobile ? (
+                              activeSubmenu === item.object_slug ? (
+                                <FaCaretUp />
+                              ) : (
+                                <FaCaretDown />
+                              )
                             ) : (
-                              <CiCirclePlus />
+                              activeSubmenu === item.object_slug ? (
+                                <MdOutlineArrowLeft />
+                              ) : (
+                                <MdOutlineArrowRight />
+                              )
                             )}
-                          </a>
-                          {activeNestedSubmenu === "genesis" && (
-                            <ul className="nested-submenu-list mobile-nested">
-                              <li>
-                                <a href="#vision-mission" onClick={closeMenu}>
-                                  Vision & Mission
-                                </a>
-                              </li>
-                              <li>
-                                <a href="#founding" onClick={closeMenu}>
-                                  Founding
-                                </a>
-                              </li>
-                              <li>
-                                <a href="#objectives" onClick={closeMenu}>
-                                  Objectives
-                                </a>
-                              </li>
-                              <li>
-                                <a
-                                  href="#message-from-leadership"
-                                  onClick={closeMenu}
+                          </span>
+                        </a>
+                      ) : (
+                        <Link
+                          href={convertToNextLink(item.url, item.object_slug)}
+                          onClick={closeMenu}
+                        >
+                          {item.title}
+                        </Link>
+                      )}
+                      {activeSubmenu === item.object_slug &&
+                        item.children &&
+                        item.children.length > 0 && (
+                          <div className="submenu-content mobile-submenu">
+                            <ul className="submenu-list">
+                              {item.children.map((child) => (
+                                <li
+                                  key={child.id}
+                                  className={
+                                    child.children && child.children.length > 0
+                                      ? "has-nested-submenu"
+                                      : ""
+                                  }
                                 >
-                                  Message from Leadership
-                                </a>
-                              </li>
-                              <li>
-                                <a
-                                  href="#milestones-achievements"
-                                  onClick={closeMenu}
-                                >
-                                  Milestones & Achievements
-                                </a>
-                              </li>
+                                  {child.children && child.children.length > 0 ? (
+                                    <a
+                                      href="#"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        setActiveNestedSubmenu(
+                                          activeNestedSubmenu ===
+                                            child.object_slug
+                                            ? null
+                                            : child.object_slug
+                                        );
+                                      }}
+                                      className="nested-toggle"
+                                    >
+                                      {child.title}
+                                      {activeNestedSubmenu ===
+                                      child.object_slug ? (
+                                        <CiCircleMinus />
+                                      ) : (
+                                        <CiCirclePlus />
+                                      )}
+                                    </a>
+                                  ) : (
+                                    <Link
+                                      href={convertToNextLink(child.url, child.object_slug)}
+                                      onClick={closeMenu}
+                                    >
+                                      {child.title}
+                                    </Link>
+                                  )}
+                                  {activeNestedSubmenu === child.object_slug &&
+                                    child.children &&
+                                    child.children.length > 0 && (
+                                      <ul className="nested-submenu-list mobile-nested">
+                                        {child.children.map((nestedChild) => (
+                                          <li key={nestedChild.id}>
+                                            <Link
+                                              href={convertToNextLink(nestedChild.url, nestedChild.object_slug)}
+                                              onClick={closeMenu}
+                                            >
+                                              {nestedChild.title}
+                                            </Link>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                </li>
+                              ))}
                             </ul>
-                          )}
-                        </li>
-                        <li>
-                          <a
-                            href="#mission-vision-objectives"
-                            onClick={closeMenu}
-                          >
-                            Mission, Vision and Objectives
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#board-of-governors" onClick={closeMenu}>
-                            Board of Governors
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#directors-message" onClick={closeMenu}>
-                            Director's Message
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#gallery" onClick={closeMenu}>
-                            Gallery
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                </li>
-
-                <li
-                  className={`has-submenu ${
-                    activeSubmenu === "programmes" ? "active" : ""
-                  }`}
-                  onMouseEnter={() => handleSubmenuHover("programmes")}
-                >
-                  <a
-                    href="#programmes"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSubmenuClick("programmes");
-                    }}
-                  >
-                    Programmes
-                    <span
-                      className={`dropdown-arrow ${
-                        activeSubmenu === "programmes" ? "open" : ""
-                      }`}
-                    >
-                      {activeSubmenu === "programmes" ? (
-                        <FaCaretUp />
-                      ) : (
-                        <FaCaretDown />
-                      )}
-                    </span>
-                  </a>
-                  {activeSubmenu === "programmes" && (
-                    <div className="submenu-content mobile-submenu">
-                      <ul className="submenu-list">
-                        <li>
-                          <a href="#pgpm-mba" onClick={closeMenu}>
-                            PGPM (MBA)
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#pgpm-hr" onClick={closeMenu}>
-                            PGPM-HR (MBA-HR)
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#pgpbm" onClick={closeMenu}>
-                            PGPBM (MBA for Working Executives)
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#phd" onClick={closeMenu}>
-                            Ph.D (Doctoral Programme)
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#ephd" onClick={closeMenu}>
-                            E. Ph.D (Executive Doctoral Programme)
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                </li>
-
-                <li
-                  className={`has-submenu ${
-                    activeSubmenu === "people" ? "active" : ""
-                  }`}
-                  onMouseEnter={() => handleSubmenuHover("people")}
-                >
-                  <a
-                    href="#people"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSubmenuClick("people");
-                    }}
-                  >
-                    People
-                    <span
-                      className={`dropdown-arrow ${
-                        activeSubmenu === "people" ? "open" : ""
-                      }`}
-                    >
-                      {activeSubmenu === "people" ? (
-                        <FaCaretUp />
-                      ) : (
-                        <FaCaretDown />
-                      )}
-                    </span>
-                  </a>
-                  {activeSubmenu === "people" && (
-                    <div className="submenu-content mobile-submenu">
-                      <ul className="submenu-list">
-                        <li>
-                          <a href="#director" onClick={closeMenu}>
-                            Director
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#faculty" onClick={closeMenu}>
-                            Faculty
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#students" onClick={closeMenu}>
-                            Students
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#administration" onClick={closeMenu}>
-                            Administration
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#alumni" onClick={closeMenu}>
-                            Alumni
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#cvo" onClick={closeMenu}>
-                            CVO
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#iem" onClick={closeMenu}>
-                            IEM
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                </li>
-
-                <li
-                  className={`has-submenu ${
-                    activeSubmenu === "journal" ? "active" : ""
-                  }`}
-                  onMouseEnter={() => handleSubmenuHover("journal")}
-                >
-                  <a
-                    href="#journal"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSubmenuClick("journal");
-                    }}
-                  >
-                    Journal
-                    <span
-                      className={`dropdown-arrow ${
-                        activeSubmenu === "journal" ? "open" : ""
-                      }`}
-                    >
-                      {activeSubmenu === "journal" ? (
-                        <FaCaretUp />
-                      ) : (
-                        <FaCaretDown />
-                      )}
-                    </span>
-                  </a>
-                  {activeSubmenu === "journal" && (
-                    <div className="submenu-content mobile-submenu">
-                      <ul className="submenu-list">
-                        <li>
-                          <a href="#iimt-journal" onClick={closeMenu}>
-                            IIMT Journal of Management
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                </li>
-
-                <li
-                  className={`has-submenu ${
-                    activeSubmenu === "research" ? "active" : ""
-                  }`}
-                  onMouseEnter={() => handleSubmenuHover("research")}
-                >
-                  <a
-                    href="#research"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSubmenuClick("research");
-                    }}
-                  >
-                    Research
-                    <span
-                      className={`dropdown-arrow ${
-                        activeSubmenu === "research" ? "open" : ""
-                      }`}
-                    >
-                      {activeSubmenu === "research" ? (
-                        <FaCaretUp />
-                      ) : (
-                        <FaCaretDown />
-                      )}
-                    </span>
-                  </a>
-                  {activeSubmenu === "research" && (
-                    <div className="submenu-content mobile-submenu">
-                      <ul className="submenu-list">
-                        <li>
-                          <a href="#publications" onClick={closeMenu}>
-                            Publications
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#centers" onClick={closeMenu}>
-                            Centers
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            href="#conference-presentations"
-                            onClick={closeMenu}
-                          >
-                            Conference Presentations
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#working-papers" onClick={closeMenu}>
-                            Working Papers
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#conferences-at-iimt" onClick={closeMenu}>
-                            Conferences at IIMT
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                </li>
-
-                <li
-                  className={`has-submenu ${
-                    activeSubmenu === "placements" ? "active" : ""
-                  }`}
-                  onMouseEnter={() => handleSubmenuHover("placements")}
-                >
-                  <a
-                    href="#placements"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSubmenuClick("placements");
-                    }}
-                  >
-                    Placements
-                    <span
-                      className={`dropdown-arrow ${
-                        activeSubmenu === "placements" ? "open" : ""
-                      }`}
-                    >
-                      {activeSubmenu === "placements" ? (
-                        <FaCaretUp />
-                      ) : (
-                        <FaCaretDown />
-                      )}
-                    </span>
-                  </a>
-                  {activeSubmenu === "placements" && (
-                    <div className="submenu-content mobile-submenu">
-                      <ul className="submenu-list">
-                        <li>
-                          <a href="#invites" onClick={closeMenu}>
-                            Invites
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#brochure" onClick={closeMenu}>
-                            Brochure
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#top-recruiters" onClick={closeMenu}>
-                            Top Recruiters
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#placement-reports" onClick={closeMenu}>
-                            Placement Reports
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#placement-contact" onClick={closeMenu}>
-                            Contact Details
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                </li>
-
-                <li
-                  className={`has-submenu ${
-                    activeSubmenu === "media-relations" ? "active" : ""
-                  }`}
-                  onMouseEnter={() => handleSubmenuHover("media-relations")}
-                >
-                  <a
-                    href="#media-relations"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSubmenuClick("media-relations");
-                    }}
-                  >
-                    Media Relations
-                    <span
-                      className={`dropdown-arrow ${
-                        activeSubmenu === "media-relations" ? "open" : ""
-                      }`}
-                    >
-                      {activeSubmenu === "media-relations" ? (
-                        <FaCaretUp />
-                      ) : (
-                        <FaCaretDown />
-                      )}
-                    </span>
-                  </a>
-                  {activeSubmenu === "media-relations" && (
-                    <div className="submenu-content mobile-submenu">
-                      <ul className="submenu-list">
-                        <li>
-                          <a href="#press-releases" onClick={closeMenu}>
-                            Press Releases
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#iimt-in-news" onClick={closeMenu}>
-                            IIM Tiruchirappalli in News
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#nirf" onClick={closeMenu}>
-                            NIRF
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#snapshots" onClick={closeMenu}>
-                            Snapshots
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#media-contact" onClick={closeMenu}>
-                            Contact Details
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                </li>
-
-                <li
-                  className={`has-submenu ${
-                    activeSubmenu === "executive-education" ? "active" : ""
-                  }`}
-                  onMouseEnter={() => handleSubmenuHover("executive-education")}
-                >
-                  <a
-                    href="#executive-education"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSubmenuClick("executive-education");
-                    }}
-                  >
-                    Executive Education & Consulting
-                    <span
-                      className={`dropdown-arrow ${
-                        activeSubmenu === "executive-education" ? "open" : ""
-                      }`}
-                    >
-                      {activeSubmenu === "executive-education" ? (
-                        <FaCaretUp />
-                      ) : (
-                        <FaCaretDown />
-                      )}
-                    </span>
-                  </a>
-                  {activeSubmenu === "executive-education" && (
-                    <div className="submenu-content mobile-submenu">
-                      <ul className="submenu-list">
-                        <li>
-                          <a
-                            href="#executive-education-programs"
-                            onClick={closeMenu}
-                          >
-                            Executive Education
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#consulting-activities" onClick={closeMenu}>
-                            Consulting Activities
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                </li>
-
-                <li
-                  className={`has-submenu ${
-                    activeSubmenu === "campus" ? "active" : ""
-                  }`}
-                  onMouseEnter={() => handleSubmenuHover("campus")}
-                >
-                  <a
-                    href="#campus"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSubmenuClick("campus");
-                    }}
-                  >
-                    Campus
-                    <span
-                      className={`dropdown-arrow ${
-                        activeSubmenu === "campus" ? "open" : ""
-                      }`}
-                    >
-                      {activeSubmenu === "campus" ? (
-                        <FaCaretUp />
-                      ) : (
-                        <FaCaretDown />
-                      )}
-                    </span>
-                  </a>
-                  {activeSubmenu === "campus" && (
-                    <div className="submenu-content mobile-submenu">
-                      <ul className="submenu-list">
-                        <li>
-                          <a
-                            href="#learning-resource-centre"
-                            onClick={closeMenu}
-                          >
-                            Learning Resource Centre
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#computing-resources" onClick={closeMenu}>
-                            Computing Resources
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#hostels" onClick={closeMenu}>
-                            Hostels
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#finance-lab" onClick={closeMenu}>
-                            Finance lab
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#behavioural-lab" onClick={closeMenu}>
-                            Behavioural lab
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#sports-facility" onClick={closeMenu}>
-                            Sports Facility
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#virtual-tour" onClick={closeMenu}>
-                            Virtual Tour
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                </li>
-
-                <li
-                  className={`has-submenu ${
-                    activeSubmenu === "international-relations" ? "active" : ""
-                  }`}
-                  onMouseEnter={() =>
-                    handleSubmenuHover("international-relations")
-                  }
-                >
-                  <a
-                    href="#international-relations"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSubmenuClick("international-relations");
-                    }}
-                  >
-                    International Relations
-                    <span
-                      className={`dropdown-arrow ${
-                        activeSubmenu === "international-relations"
-                          ? "open"
-                          : ""
-                      }`}
-                    >
-                      {activeSubmenu === "international-relations" ? (
-                        <FaCaretUp />
-                      ) : (
-                        <FaCaretDown />
-                      )}
-                    </span>
-                  </a>
-                  {activeSubmenu === "international-relations" && (
-                    <div className="submenu-content mobile-submenu">
-                      <ul className="submenu-list">
-                        <li>
-                          <a
-                            href="#international-relations-overview"
-                            onClick={closeMenu}
-                          >
-                            International-Relations
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#partner-networks" onClick={closeMenu}>
-                            Partner Networks
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#international-gallery" onClick={closeMenu}>
-                            International Relations Gallery
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#students-exchange" onClick={closeMenu}>
-                            Students Exchange Programme
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#faculty-exchange" onClick={closeMenu}>
-                            Faculty Exchange Programme
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#youth-delegation" onClick={closeMenu}>
-                            Youth Delegation Program
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#international-contact" onClick={closeMenu}>
-                            Contact Details
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                </li>
+                          </div>
+                        )}
+                    </li>
+                  ))
+                )}
               </ul>
 
               {/* Menu Footer - Connect with us */}
@@ -853,372 +388,75 @@ export default function Navbar() {
                 }
               }}
             >
-              {activeSubmenu === "about" && (
-                <div className="submenu-content">
-                  <ul className="submenu-list">
-                    <li
-                      className="has-nested-submenu"
-                      onMouseEnter={() => handleNestedSubmenuHover("genesis")}
-                      onMouseLeave={() => handleNestedSubmenuHover(null)}
-                    >
-                      <a href="#genesis" className="nested-toggle">
-                        Genesis
-                        {activeNestedSubmenu === "genesis" ? (
-                          <CiCircleMinus />
-                        ) : (
-                          <CiCirclePlus />
-                        )}
-                      </a>
-                      {activeNestedSubmenu === "genesis" && (
-                        <div className="nested-submenu">
-                          <ul className="nested-submenu-list">
-                            <li>
-                              <a href="#vision-mission" onClick={closeMenu}>
-                                Vision & Mission
-                              </a>
-                            </li>
-                            <li>
-                              <a href="#founding" onClick={closeMenu}>
-                                Founding
-                              </a>
-                            </li>
-                            <li>
-                              <a href="#objectives" onClick={closeMenu}>
-                                Objectives
-                              </a>
-                            </li>
-                            <li>
+              {activeSubmenu &&
+                menuData
+                  .filter((item) => item.object_slug === activeSubmenu)
+                  .map((item) => (
+                    <div key={item.id} className="submenu-content">
+                      <ul className="submenu-list">
+                        {item.children?.map((child) => (
+                          <li
+                            key={child.id}
+                            className={
+                              child.children && child.children.length > 0
+                                ? "has-nested-submenu"
+                                : ""
+                            }
+                            onMouseEnter={() =>
+                              child.children && child.children.length > 0
+                                ? handleNestedSubmenuHover(child.object_slug)
+                                : handleNestedSubmenuHover(null)
+                            }
+                            onMouseLeave={() =>
+                              child.children && child.children.length > 0
+                                ? null
+                                : handleNestedSubmenuHover(null)
+                            }
+                          >
+                            {child.children && child.children.length > 0 ? (
                               <a
-                                href="#message-from-leadership"
+                                href="#"
+                                className="nested-toggle"
+                                onClick={(e) => e.preventDefault()}
+                              >
+                                {child.title}
+                                {activeNestedSubmenu === child.object_slug ? (
+                                  <MdOutlineArrowLeft />
+                                ) : (
+                                  <MdOutlineArrowRight />
+                                )}
+                              </a>
+                            ) : (
+                              <Link
+                                href={convertToNextLink(child.url, child.object_slug)}
                                 onClick={closeMenu}
                               >
-                                Message from Leadership
-                              </a>
-                            </li>
-                            <li>
-                              <a
-                                href="#milestones-achievements"
-                                onClick={closeMenu}
-                              >
-                                Milestones & Achievements
-                              </a>
-                            </li>
-                          </ul>
-                        </div>
-                      )}
-                    </li>
-                    <li onMouseEnter={() => handleNestedSubmenuHover(null)}>
-                      <a href="#mission-vision-objectives" onClick={closeMenu}>
-                        Mission, Vision and Objectives
-                      </a>
-                    </li>
-                    <li onMouseEnter={() => handleNestedSubmenuHover(null)}>
-                      <a href="#board-of-governors" onClick={closeMenu}>
-                        Board of Governors
-                      </a>
-                    </li>
-                    <li onMouseEnter={() => handleNestedSubmenuHover(null)}>
-                      <a href="#directors-message" onClick={closeMenu}>
-                        Director's Message
-                      </a>
-                    </li>
-                    <li onMouseEnter={() => handleNestedSubmenuHover(null)}>
-                      <a href="#gallery" onClick={closeMenu}>
-                        Gallery
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {activeSubmenu === "programmes" && (
-                <div className="submenu-content">
-                  <ul className="submenu-list">
-                    <li>
-                      <a href="#pgpm-mba" onClick={closeMenu}>
-                        PGPM (MBA)
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#pgpm-hr" onClick={closeMenu}>
-                        PGPM-HR (MBA-HR)
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#pgpbm" onClick={closeMenu}>
-                        PGPBM (MBA for Working Executives)
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#phd" onClick={closeMenu}>
-                        Ph.D (Doctoral Programme)
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#ephd" onClick={closeMenu}>
-                        E. Ph.D (Executive Doctoral Programme)
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {activeSubmenu === "people" && (
-                <div className="submenu-content">
-                  <ul className="submenu-list">
-                    <li>
-                      <a href="#director" onClick={closeMenu}>
-                        Director
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#faculty" onClick={closeMenu}>
-                        Faculty
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#students" onClick={closeMenu}>
-                        Students
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#administration" onClick={closeMenu}>
-                        Administration
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#alumni" onClick={closeMenu}>
-                        Alumni
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#cvo" onClick={closeMenu}>
-                        CVO
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#iem" onClick={closeMenu}>
-                        IEM
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {activeSubmenu === "journal" && (
-                <div className="submenu-content">
-                  <ul className="submenu-list">
-                    <li>
-                      <a href="#iimt-journal" onClick={closeMenu}>
-                        IIMT Journal of Management
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {activeSubmenu === "research" && (
-                <div className="submenu-content">
-                  <ul className="submenu-list">
-                    <li>
-                      <a href="#publications" onClick={closeMenu}>
-                        Publications
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#centers" onClick={closeMenu}>
-                        Centers
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#conference-presentations" onClick={closeMenu}>
-                        Conference Presentations
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#working-papers" onClick={closeMenu}>
-                        Working Papers
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#conferences-at-iimt" onClick={closeMenu}>
-                        Conferences at IIMT
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {activeSubmenu === "placements" && (
-                <div className="submenu-content">
-                  <ul className="submenu-list">
-                    <li>
-                      <a href="#invites" onClick={closeMenu}>
-                        Invites
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#brochure" onClick={closeMenu}>
-                        Brochure
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#top-recruiters" onClick={closeMenu}>
-                        Top Recruiters
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#placement-reports" onClick={closeMenu}>
-                        Placement Reports
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#placement-contact" onClick={closeMenu}>
-                        Contact Details
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {activeSubmenu === "media-relations" && (
-                <div className="submenu-content">
-                  <ul className="submenu-list">
-                    <li>
-                      <a href="#press-releases" onClick={closeMenu}>
-                        Press Releases
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#iimt-in-news" onClick={closeMenu}>
-                        IIM Tiruchirappalli in News
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#nirf" onClick={closeMenu}>
-                        NIRF
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#snapshots" onClick={closeMenu}>
-                        Snapshots
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#media-contact" onClick={closeMenu}>
-                        Contact Details
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {activeSubmenu === "executive-education" && (
-                <div className="submenu-content">
-                  <ul className="submenu-list">
-                    <li>
-                      <a
-                        href="#executive-education-programs"
-                        onClick={closeMenu}
-                      >
-                        Executive Education
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#consulting-activities" onClick={closeMenu}>
-                        Consulting Activities
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {activeSubmenu === "campus" && (
-                <div className="submenu-content">
-                  <ul className="submenu-list">
-                    <li>
-                      <a href="#learning-resource-centre" onClick={closeMenu}>
-                        Learning Resource Centre
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#computing-resources" onClick={closeMenu}>
-                        Computing Resources
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#hostels" onClick={closeMenu}>
-                        Hostels
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#finance-lab" onClick={closeMenu}>
-                        Finance lab
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#behavioural-lab" onClick={closeMenu}>
-                        Behavioural lab
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#sports-facility" onClick={closeMenu}>
-                        Sports Facility
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#virtual-tour" onClick={closeMenu}>
-                        Virtual Tour
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {activeSubmenu === "international-relations" && (
-                <div className="submenu-content">
-                  <ul className="submenu-list">
-                    <li>
-                      <a
-                        href="#international-relations-overview"
-                        onClick={closeMenu}
-                      >
-                        International-Relations
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#partner-networks" onClick={closeMenu}>
-                        Partner Networks
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#international-gallery" onClick={closeMenu}>
-                        International Relations Gallery
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#students-exchange" onClick={closeMenu}>
-                        Students Exchange Programme
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#faculty-exchange" onClick={closeMenu}>
-                        Faculty Exchange Programme
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#youth-delegation" onClick={closeMenu}>
-                        Youth Delegation Program
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#international-contact" onClick={closeMenu}>
-                        Contact Details
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              )}
+                                {child.title}
+                              </Link>
+                            )}
+                            {activeNestedSubmenu === child.object_slug &&
+                              child.children &&
+                              child.children.length > 0 && (
+                                <div className="nested-submenu">
+                                  <ul className="nested-submenu-list">
+                                    {child.children.map((nestedChild) => (
+                                      <li key={nestedChild.id}>
+                                        <Link
+                                          href={convertToNextLink(nestedChild.url, nestedChild.object_slug)}
+                                          onClick={closeMenu}
+                                        >
+                                          {nestedChild.title}
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
             </div>
           </div>
         </>
