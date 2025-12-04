@@ -92,6 +92,19 @@ export default function Navbar() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   const toggleMenu = () => {
     if (isOpen) {
       closeMenu();
@@ -136,21 +149,23 @@ export default function Navbar() {
       <header className="header-top">
         <div className="container-fluid">
           <div className="header-content">
-            <a className="navbar-brand navbar-logo" href="/">
-              <img
-                src="/iimt_logo_icon.png"
-                alt="IIM Trichy"
-                className="logo-img"
-              />
-              <div className="logo-text-wrapper">
-                <div className="logo-title">
-                  भारतीय प्रबंधन संस्थान तिरुचिरापल्ली
+            <div className="navbar-brand navbar-logo">
+              <a href="/" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
+                <img
+                  src="/iimt_logo_icon.png"
+                  alt="IIM Trichy"
+                  className="logo-img"
+                />
+                <div className="logo-text-wrapper">
+                  <div className="logo-title">
+                    भारतीय प्रबंधन संस्थान तिरुचिरापल्ली
+                  </div>
+                  <div className="logo-subtitle">
+                    Indian Institute of Management Tiruchirapalli
+                  </div>
                 </div>
-                <div className="logo-subtitle">
-                  Indian Institute of Management Tiruchirapalli
-                </div>
-              </div>
-            </a>
+              </a>
+            </div>
 
             {/* Hamburger Toggle Button */}
             <button
