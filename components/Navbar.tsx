@@ -384,12 +384,9 @@ export default function Navbar() {
                       <FaYoutube />
                     </a>
                   </div>
-                  <a
-                    href="https://www.iimtrichy.ac.in/contact-us"
-                    className="connect-btn"
-                  >
+                  <Link href="/contact" onClick={closeMenu} className="connect-btn">
                     Connect with us
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
