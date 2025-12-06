@@ -274,10 +274,12 @@ export default function ContactPage() {
                   {section.contacts.map((contact, index) => (
                     <div key={index} className="contact-card">
                       <h4 className="contact-title">{contact.title}</h4>
-                      <p className="contact-email">
-                        <FaEnvelope className="icon-blue" />
-                        <a href={`mailto:${contact.email}`}>{contact.email}</a>
-                      </p>
+                      {contact.email && (
+                        <p className="contact-email">
+                          <FaEnvelope className="icon-blue" />
+                          <a href={`mailto:${contact.email}`}>{contact.email}</a>
+                        </p>
+                      )}
                       <p className="contact-phone">
                         <FaPhone className="icon-gray" />
                         {contact.phone}
