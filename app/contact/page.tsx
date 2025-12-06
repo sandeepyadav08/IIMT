@@ -145,7 +145,7 @@ const accordionData: AccordionSection[] = [
 ];
 
 export default function ContactPage() {
-  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
+  const [openAccordion, setOpenAccordion] = useState<string | null>("DEAN");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
