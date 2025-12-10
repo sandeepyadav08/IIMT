@@ -29,7 +29,7 @@ export async function getPageBySlug(slug: string): Promise<WordPressPage | null>
     const response = await fetch(
       `${WORDPRESS_API_URL}/pages?slug=${slug}`,
       {
-        next: { revalidate: 60 } // Revalidate every 60 seconds
+        cache: 'no-store' // Always fetch fresh data
       }
     );
 
@@ -59,7 +59,7 @@ export async function getAllPages(): Promise<WordPressPage[]> {
     const response = await fetch(
       `${WORDPRESS_API_URL}/pages?per_page=100`,
       {
-        next: { revalidate: 3600 } // Revalidate every hour
+        cache: 'no-store' // Always fetch fresh data
       }
     );
 
@@ -70,6 +70,53 @@ export async function getAllPages(): Promise<WordPressPage[]> {
     return await response.json();
   } catch (error) {
     console.error('Error fetching WordPress pages:', error);
+    return [];
+  }
+}
+/**
+ * Fetch the WordPress homepage (tries multiple approaches)
+ * @returns The homepage data or null if not found
+ */
+export async function getHomePage(): Promise<WordPressPage | null> {
+  // Try different common homepage slugs
+  const homePageSlugs = ['home', 'homepage', 'front-page', 'index'];
+  
+  for (const slug of homePageSlugs) {
+    const page = await getPageBySlug(slug);
+    if (page) {
+      return page;
+    }
+  }
+
+  // If no specific home page found, try to get the first published page
+  try {
+    const pages = await getAllPages();
+    const publishedPages = pages.filter(page => page.status === 'publish');
+    
+    if (publishedPages.length > 0) {
+      return publishedPages[0];
+    }
+  } catch (error) {
+    console.error('Error fetching homepage:', error);
+  }
+
+  return null;
+}
+
+/**
+ * Debug function to list all available pages
+ * @returns Array of page slugs and titles
+ */
+export async function debugPages(): Promise<{slug: string, title: string, id: number}[]> {
+  try {
+    const pages = await getAllPages();
+    return pages.map(page => ({
+      slug: page.slug,
+      title: page.title.rendered,
+      id: page.id
+    }));
+  } catch (error) {
+    console.error('Error debugging pages:', error);
     return [];
   }
 }

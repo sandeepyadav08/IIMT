@@ -67,7 +67,7 @@ export default function Navbar() {
     const fetchMenu = async () => {
       try {
         const response = await fetch(
-          "http://192.168.29.241/wordpress/wp-json/wp-api-menus/v2/menus/15"
+          "http://192.168.29.241/wordpress/wp-json/wp-api-menus/v2/menus/4"
         );
         const data: MenuData = await response.json();
         setMenuData(data.items || []);
