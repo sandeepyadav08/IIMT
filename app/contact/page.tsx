@@ -158,32 +158,53 @@ export default function ContactPage() {
     setOpenAccordion(openAccordion === title ? null : title);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    try {
-      const response = await fetch("http://192.168.29.241/wordpress/wp-json/custom/v1/contact", {
+  try {
+    const payload = new FormData();
+    payload.append("_wpcf7", "100");
+    payload.append("_wpcf7_version", "5.9");
+    payload.append("_wpcf7_locale", "en_US");
+    payload.append("_wpcf7_unit_tag", "wpcf7-f100-o1");
+    payload.append("_wpcf7_container_post", "0");
+
+    payload.append("your-name", formData.name);
+    payload.append("your-email", formData.email);
+    payload.append("your-subject", formData.subject);
+    payload.append("your-message", formData.message);
+
+    const response = await fetch(
+      "http://192.168.29.241/wordpress/wp-json/contact-form-7/v1/contact-forms/100/feedback",
+      {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit form");
+        body: payload, // ⭐ NO headers → CF7 accepts multipart when no manual headers
       }
+    );
 
-      alert("Thank you for your message. We will get back to you soon!");
-      setFormData({ name: "", email: "", subject: "", message: "" });
-    } catch (error) {
-      console.error("Form submission error:", error);
-      alert("Sorry, there was an error submitting your message. Please try again later.");
-    } finally {
-      setIsSubmitting(false);
+    const result = await response.json();
+    console.log("CF7 Response:", result);
+
+    if (result.status === "mail_sent") {
+      alert("Thank you! Your message has been sent.");
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
+    } else {
+      alert(result.message || "Failed to send message.");
     }
-  };
+  } catch (err) {
+    console.error("Submit Error:", err);
+    alert("Error sending message. Try again.");
+  }
+
+  setIsSubmitting(false);
+};
+
 
   return (
     <div className="contact-page">
@@ -328,7 +349,7 @@ export default function ContactPage() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                placeholder="Your Name"
+                placeholder="Enter your full name"
               />
             </div>
             <div className="form-group">
@@ -339,7 +360,7 @@ export default function ContactPage() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                placeholder="Your Email"
+                placeholder="Enter your email address"
               />
             </div>
           </div>
@@ -351,7 +372,7 @@ export default function ContactPage() {
               value={formData.subject}
               onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
               required
-              placeholder="Subject"
+              placeholder="Brief description of your issue"
             />
           </div>
           <div className="form-group">
@@ -362,7 +383,7 @@ export default function ContactPage() {
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
               required
-              placeholder="Your Message"
+              placeholder="Describe the issue you're facing. Don't share any sensitive information, such as credentials and credit card numbers"
             ></textarea>
           </div>
           <button type="submit" className="submit-btn" disabled={isSubmitting}>
