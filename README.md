@@ -58,23 +58,6 @@ Custom styles include:
 - Bootstrap integration
 - Mobile responsiveness
 
-## Customization
-
-### Change Colors
-
-Edit `app/globals.css`:
-
-```css
-.navbar-custom {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-}
-
-.nav-link:hover {
-  color: #00d4ff !important;
-}
-```
-```
-
 ## Key Technologies
 
 - **Next.js** - React framework for production
