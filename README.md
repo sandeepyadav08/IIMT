@@ -73,27 +73,6 @@ Edit `app/globals.css`:
   color: #00d4ff !important;
 }
 ```
-
-### Add More Menu Items
-
-Edit `components/Navbar.tsx` and add more `<li>` items:
-
-```tsx
-<li className="nav-item">
-  <a className="nav-link" href="#newpage">
-    New Page
-  </a>
-</li>
-```
-
-### Modify Brand Name
-
-Change the navbar brand in `components/Navbar.tsx`:
-
-```tsx
-<a className="navbar-brand" href="/">
-  Your Site Name
-</a>
 ```
 
 ## Key Technologies
